@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>API Demo - All Endpoints</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap"
+      rel="stylesheet" />
+
+    <link rel="stylesheet" href="./assets/vendor/css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/fav.svg" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@iconscout/unicons@4.0.8/css/line.min.css" />
+
+    <style>
+      body {
+        background: #f5f6fa;
+        padding: 20px;
+      }
+      .api-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .api-header {
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      .api-section {
+        background: #fff;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .api-section h3 {
+        color: #ad071e;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+      .btn-api {
+        padding: 8px 15px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.3s;
+        color: white;
+      }
+      .btn-get {
+        background: #28a745;
+      }
+      .btn-get:hover {
+        background: #218838;
+      }
+      .btn-post {
+        background: #007bff;
+      }
+      .btn-post:hover {
+        background: #0056b3;
+      }
+      .btn-put {
+        background: #ffc107;
+      }
+      .btn-put:hover {
+        background: #e0a800;
+      }
+      .btn-delete {
+        background: #dc3545;
+      }
+      .btn-delete:hover {
+        background: #c82333;
+      }
+      .response-container {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .response-content {
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .success {
+        color: #28a745;
+      }
+      .error {
+        color: #dc3545;
+      }
+      .endpoint {
+        font-family: "Courier New", monospace;
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="api-container">
+      <div class="api-header">
+        <h1>🚀 API Demo - All Backend Endpoints</h1>
+        <p>Test all integrated backend API endpoints</p>
+        <div style="margin-top: 15px">
+          <span class="user-name" style="font-weight: bold"></span> |
+          <span class="user-role"></span>
+          <button
+            class="btn-api btn-delete"
+            data-logout
+            style="margin-left: 10px">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard APIs -->
+      <div class="api-section">
+        <h3>📊 Dashboard APIs</h3>
+        <button class="btn-api btn-get" onclick="testAPI('dashboard', 'stats')">
+          GET <span class="endpoint">/dashboard/stats</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('dashboard', 'activity')">
+          GET <span class="endpoint">/dashboard/activity</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('dashboard', 'insights')">
+          GET <span class="endpoint">/dashboard/insights</span>
+        </button>
+      </div>
+
+      <!-- Containers APIs -->
+      <div class="api-section">
+        <h3>📦 Containers APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('containers', 'getAll')">
+          GET <span class="endpoint">/containers</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('containers', 'getById', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/containers/:id</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('containers', 'getShipments', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/containers/:id/shipments</span>
+        </button>
+        <button
+          class="btn-api btn-post"
+          onclick="testAPI('containers', 'create', sampleData.container)">
+          POST <span class="endpoint">/containers</span> (Create)
+        </button>
+      </div>
+
+      <!-- Customers APIs -->
+      <div class="api-section">
+        <h3>👥 Customers APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('customers', 'getAll')">
+          GET <span class="endpoint">/customers</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('customers', 'getById', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/customers/:id</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('customers', 'getShipments', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/customers/:id/shipments</span>
+        </button>
+        <button
+          class="btn-api btn-post"
+          onclick="testAPI('customers', 'create', sampleData.customer)">
+          POST <span class="endpoint">/customers</span> (Create)
+        </button>
+      </div>
+
+      <!-- Shipments APIs -->
+      <div class="api-section">
+        <h3>🚢 Shipments APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('shipments', 'getAll')">
+          GET <span class="endpoint">/shipments</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('shipments', 'search', 'test')">
+          GET <span class="endpoint">/shipments/search?q=test</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('shipments', 'getById', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/shipments/:id</span>
+        </button>
+        <button
+          class="btn-api btn-post"
+          onclick="testAPI('shipments', 'create', sampleData.shipment)">
+          POST <span class="endpoint">/shipments</span> (Create)
+        </button>
+      </div>
+
+      <!-- Warehouses APIs -->
+      <div class="api-section">
+        <h3>🏭 Warehouses APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('warehouses', 'getAll')">
+          GET <span class="endpoint">/warehouses</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('warehouses', 'getById', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/warehouses/:id</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('warehouses', 'getInventory', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/warehouses/:id/inventory</span>
+        </button>
+      </div>
+
+      <!-- Tracking APIs -->
+      <div class="api-section">
+        <h3>📍 Tracking APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('tracking', 'getActiveContainers')">
+          GET <span class="endpoint">/tracking/containers/active</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('tracking', 'track', 'TRACK123')">
+          GET <span class="endpoint">/tracking/:number</span>
+        </button>
+      </div>
+
+      <!-- Reports APIs -->
+      <div class="api-section">
+        <h3>📈 Reports APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('reports', 'getShipmentsReport')">
+          GET <span class="endpoint">/reports/shipments</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('reports', 'getContainersReport')">
+          GET <span class="endpoint">/reports/containers</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('reports', 'getWarehouseReport')">
+          GET <span class="endpoint">/reports/warehouse</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('reports', 'getFinancialReport')">
+          GET <span class="endpoint">/reports/financial</span> (Admin only)
+        </button>
+      </div>
+
+      <!-- Documents APIs -->
+      <div class="api-section">
+        <h3>📄 Documents APIs</h3>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('documents', 'getAll')">
+          GET <span class="endpoint">/documents</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('documents', 'getById', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/documents/:id</span>
+        </button>
+        <button
+          class="btn-api btn-get"
+          onclick="testAPI('documents', 'getForShipment', '674b7e6f21c6e8e16cc08ca7')">
+          GET <span class="endpoint">/documents/shipment/:id</span>
+        </button>
+      </div>
+
+      <!-- Users APIs -->
+      <div class="api-section">
+        <h3>👤 Users APIs</h3>
+        <button class="btn-api btn-get" onclick="testAPI('users', 'getMe')">
+          GET <span class="endpoint">/users/me</span>
+        </button>
+        <button class="btn-api btn-get" onclick="testAPI('users', 'getAll')">
+          GET <span class="endpoint">/users</span> (Admin only)
+        </button>
+      </div>
+
+      <!-- Response Display -->
+      <div class="api-section">
+        <h3>📡 API Response</h3>
+        <div id="responseContainer" class="response-container">
+          <div class="response-content" id="responseContent">
+            Click any API button above to see the response here...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./assets/vendor/js/jquery/jquery-3.5.1.min.js"></script>
+    <script src="./assets/js/api-loader.js"></script>
+
+    <script>
+      // Require authentication
+      window.addEventListener("apisLoaded", () => {
+        AuthGuard.requireAuth();
+        AuthGuard.initUserInfo();
+      });
+
+      // Sample data for POST requests
+      const sampleData = {
+        container: {
+          containerNumber: "DEMO" + Date.now(),
+          size: 20,
+          type: "DRY",
+          status: "LOADING",
+        },
+        customer: {
+          name: "Demo Customer",
+          email: "demo@example.com",
+          phone: "+1234567890",
+          company: "Demo Company",
+        },
+        shipment: {
+          trackingNumber: "SHIP" + Date.now(),
+          customerName: "Demo Customer",
+          origin: "China",
+          destination: "USA",
+          status: "PENDING",
+        },
+      };
+
+      // Test API function
+      async function testAPI(apiName, method, ...args) {
+        const responseContent = document.getElementById("responseContent");
+
+        try {
+          responseContent.className = "response-content";
+          responseContent.textContent = "Loading...";
+
+          // Get the API instance
+          const api = window[apiName + "API"];
+          if (!api) {
+            throw new Error(`API ${apiName} not found`);
+          }
+
+          // Call the method
+          const result = await api[method](...args);
+
+          // Display success
+          responseContent.className = "response-content success";
+          responseContent.textContent =
+            `✅ Success!\n\n` + JSON.stringify(result, null, 2);
+        } catch (error) {
+          // Display error
+          responseContent.className = "response-content error";
+          responseContent.textContent =
+            `❌ Error!\n\n` +
+            JSON.stringify(
+              {
+                message: error.message,
+                error: error.toString(),
+              },
+              null,
+              2
+            );
+        }
+      }
+    </script>
+  </body>
+</html>
+
