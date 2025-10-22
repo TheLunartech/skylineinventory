@@ -1335,7 +1335,7 @@
                           font-size: 0.875rem;
                           margin-bottom: 0.25rem;
                         ">
-                        Weight
+                        CBM
                       </div>
                       <div id="resultWeight" style="font-weight: 600">-</div>
                     </div>
@@ -1793,13 +1793,13 @@
                 <small class="text-muted">Select from existing customers</small>
               </div>
               <div class="form-group">
-                <label>Weight (kg)</label>
+                <label>CBM (Cubic Meters)</label>
                 <input
                   type="number"
                   step="0.01"
                   class="form-control"
                   id="shipmentWeight"
-                  placeholder="e.g., 25.5" />
+                  placeholder="e.g., 2.5" />
               </div>
             </div>
             <div class="form-row">
@@ -1892,7 +1892,8 @@
                 <select class="form-control" id="customerLocation" required>
                   <option value="">Select Location</option>
                   <option value="china">China</option>
-                  <option value="ghana">Ghana</option>
+                  <option value="accra">Accra</option>
+                  <option value="kumasi">Kumasi</option>
                 </select>
               </div>
             </div>
@@ -1981,7 +1982,8 @@
                 <select class="form-control" id="warehouseLocation" required>
                   <option value="">Select Location</option>
                   <option value="china">China</option>
-                  <option value="ghana">Ghana</option>
+                  <option value="accra">Accra</option>
+                  <option value="kumasi">Kumasi</option>
                 </select>
               </div>
               <div class="form-group">
@@ -2497,7 +2499,7 @@
               trackingNumber: "TRK123456789",
               customerId: "cust001abc123",
               description: "Electronics and household items",
-              weightKg: 45.5,
+              cbm: 2.5,
               status: "in_transit",
               originWarehouseId: "wh001xyz123",
               currentWarehouseId: null,
@@ -2509,7 +2511,7 @@
               trackingNumber: "TRK987654321",
               customerId: "cust002def456",
               description: "Textiles and fabrics",
-              weightKg: 30.2,
+              cbm: 1.8,
               status: "received",
               originWarehouseId: "wh001xyz123",
               currentWarehouseId: "wh001xyz123",
@@ -2521,7 +2523,7 @@
               trackingNumber: "TRK456789123",
               customerId: "cust003ghi789",
               description: "Machinery parts",
-              weightKg: 120.8,
+              cbm: 5.2,
               status: "delivered",
               originWarehouseId: "wh001xyz123",
               currentWarehouseId: "wh002abc456",
@@ -2533,7 +2535,7 @@
               trackingNumber: "TRK111222333",
               customerId: "cust001abc123",
               description: "Personal effects",
-              weightKg: 15.0,
+              cbm: 0.8,
               status: "inspected",
               originWarehouseId: "wh001xyz123",
               currentWarehouseId: "wh001xyz123",
@@ -2545,7 +2547,7 @@
               trackingNumber: "TRK444555666",
               customerId: "cust002def456",
               description: "Building materials",
-              weightKg: 200.0,
+              cbm: 8.5,
               status: "loaded",
               originWarehouseId: "wh001xyz123",
               currentWarehouseId: null,
@@ -3107,8 +3109,8 @@
           : shipment.containerId || "N/A";
 
         // Display weight
-        document.getElementById("resultWeight").textContent = shipment.weightKg
-          ? `${shipment.weightKg} kg`
+        document.getElementById("resultWeight").textContent = shipment.cbm
+          ? `${shipment.cbm} CBM`
           : "N/A";
 
         // Display created date
@@ -3488,7 +3490,7 @@
           customerId: customerId,
           description:
             document.getElementById("shipmentDescription").value || undefined,
-          weightKg:
+          cbm:
             parseFloat(document.getElementById("shipmentWeight").value) ||
             undefined,
           status: document.getElementById("shipmentStatus").value,
@@ -3610,7 +3612,8 @@
             error.message &&
             error.message.includes("location must be one of")
           ) {
-            errorMessage = "Please select a valid location (China or Ghana)";
+            errorMessage =
+              "Please select a valid location (China, Accra, or Kumasi)";
           }
 
           showNotification(errorMessage, "error");
@@ -3675,7 +3678,7 @@
             error.message.includes("location must be one of")
           ) {
             errorMessage =
-              "Please select a valid location (China or Ghana) from the dropdown";
+              "Please select a valid location (China, Accra, or Kumasi) from the dropdown";
           }
 
           showNotification(errorMessage, "error");
@@ -4170,14 +4173,6 @@
           staffsTabVisible: staffsNavItem?.style.display === "block",
         };
       };
-
-      window.onload = function () {
-        debugAdminAccess();
-      };
-
-      window.addEventListener("DOMContentLoaded", function () {
-        debugAdminAccess();
-      });
     </script>
   </body>
 </html>
