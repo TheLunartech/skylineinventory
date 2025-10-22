@@ -83,6 +83,25 @@ class AuthGuard {
     userRoleElements.forEach((el) => {
       el.textContent = user.role || "User";
     });
+
+    // Show/hide admin-only features
+    this.updateAdminFeatures(user.role);
+  }
+
+  /**
+   * Show or hide admin-only features based on user role
+   */
+  static updateAdminFeatures(role) {
+    const isAdmin = role === "admin";
+
+    // Show/hide staffs nav item
+    const staffsNavItem = document.getElementById("staffsNavItem");
+    if (staffsNavItem) {
+      staffsNavItem.style.display = isAdmin ? "block" : "none";
+      if (isAdmin) {
+        console.log("✅ Admin access granted - Staffs tab visible");
+      }
+    }
   }
 
   /**

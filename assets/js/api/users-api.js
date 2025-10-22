@@ -34,6 +34,17 @@ class UsersAPI {
       body: JSON.stringify(data),
     });
   }
+
+  /**
+   * Delete user
+   * DELETE /api/users/:id
+   * Requires: ADMIN role
+   */
+  async delete(id) {
+    return await authService.apiRequest(`/users/${id}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 // Create global instance

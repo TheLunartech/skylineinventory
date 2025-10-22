@@ -28,6 +28,7 @@
       href="https://cdn.jsdelivr.net/npm/@iconscout/unicons@4.0.8/css/line.min.css" />
 
     <script>
+      
       // Render localStorage JS:
       if (localStorage.theme)
         document.documentElement.setAttribute("data-theme", localStorage.theme);
@@ -149,7 +150,7 @@
     <script src="./assets/js/auth-guard.js"></script>
     <script>
       // Redirect if already authenticated
-     // AuthGuard.redirectIfAuthenticated();
+      // AuthGuard.redirectIfAuthenticated();
 
       // Handle sign in form submission
       document
@@ -183,7 +184,7 @@
 
             // Redirect to main app or saved page
             const redirectUrl =
-              localStorage.getItem("redirectAfterLogin") || "form.html";
+              localStorage.getItem("redirectAfterLogin") || "index.html";
             localStorage.removeItem("redirectAfterLogin");
             window.location.href = redirectUrl;
           } catch (error) {
