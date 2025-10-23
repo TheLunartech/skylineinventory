@@ -7,6 +7,7 @@
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
       :root {
         --primary: #2563eb;
@@ -404,7 +405,6 @@
 
       .search-input {
         padding-left: 40px;
-        
       }
 
       .search-icon {
@@ -492,7 +492,6 @@
 
       .scanner-view {
         width: 100%;
-        height: 250px;
         background: #1a2530;
         border-radius: var(--radius);
         margin: 1rem 0;
@@ -503,25 +502,17 @@
         overflow: hidden;
       }
 
-      .scanner-line {
-        position: absolute;
+      #reader {
         width: 100%;
-        height: 2px;
-        background: var(--primary);
-        top: 50%;
-        animation: scan 2s linear infinite;
+        border: none;
       }
 
-      @keyframes scan {
-        0% {
-          top: 10%;
-        }
-        50% {
-          top: 90%;
-        }
-        100% {
-          top: 10%;
-        }
+      #reader__scan_region {
+        border: 3px solid rgba(0, 255, 0, 0.8) !important;
+      }
+
+      #reader__dashboard_section {
+        display: none !important;
       }
 
       .scanner-controls {
@@ -974,52 +965,47 @@
               </p>
 
               <div class="scanner-view" id="scannerView" style="display: none">
-                <div class="scanner-line"></div>
+                <div id="reader"></div>
               </div>
 
               <div
                 class="scanner-controls"
                 id="scannerControls"
                 style="display: none">
-                <button class="btn btn-success" id="simulateScan">
-                  <i class="fas fa-barcode"></i> Simulate Scan
-                </button>
                 <button
-                  class="btn btn-outline"
-                  style="
-                    background: rgba(255, 255, 255, 0.2);
-                    color: white;
-                    border-color: rgba(255, 255, 255, 0.3);
-                  ">
-                  <i class="fas fa-lightbulb"></i> Flash
-                </button>
-                <button
-                  class="btn btn-outline"
-                  style="
-                    background: rgba(255, 255, 255, 0.2);
-                    color: white;
-                    border-color: rgba(255, 255, 255, 0.3);
-                  ">
-                  <i class="fas fa-cog"></i> Settings
+                  class="btn btn-success"
+                  id="copyScannedCode"
+                  style="display: none">
+                  <i class="fas fa-copy"></i> Copy Code
                 </button>
               </div>
 
-              <div class="scanner-result" id="scannerResult">
+              <div
+                class="scanner-result"
+                id="scannerResult"
+                style="display: none">
                 <h4>Scan Result:</h4>
                 <p>
                   <strong>Tracking Number:</strong>
-                  <span id="trackingNumber">TRK789123456</span>
+                  <span id="trackingNumber"></span>
                 </p>
                 <p>
                   <strong>Status:</strong>
                   <span class="status status-received">Received</span>
                 </p>
-                <p><strong>Customer:</strong> Global Trade Co.</p>
+                <p>
+                  <strong>Customer:</strong>
+                  <span id="scannerCustomerName">-</span>
+                </p>
                 <div style="margin-top: 1rem; display: flex; gap: 1rem">
                   <button class="btn btn-primary btn-sm" id="addToContainer">
                     Add to Container
                   </button>
-                  <button class="btn btn-outline btn-sm">View Details</button>
+                  <button
+                    class="btn btn-outline btn-sm"
+                    onclick="showTab('shipments')">
+                    View Details
+                  </button>
                 </div>
               </div>
             </div>
@@ -2377,21 +2363,167 @@
         });
       });
 
-      // Scanner functionality
+      // Scanner functionality with real barcode scanning
       const toggleScanner = document.getElementById("toggleScanner");
       const scannerView = document.getElementById("scannerView");
       const scannerControls = document.getElementById("scannerControls");
-      const simulateScan = document.getElementById("simulateScan");
       const scannerResult = document.getElementById("scannerResult");
       const trackingNumber = document.getElementById("trackingNumber");
+      const copyScannedCode = document.getElementById("copyScannedCode");
 
-      toggleScanner.addEventListener("click", function () {
+      let html5QrCode;
+      let isScanning = false;
+      let lastScannedCode = "";
+
+      function playBeep() {
+        try {
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.frequency.value = 800;
+          oscillator.type = "sine";
+          gainNode.gain.value = 0.3;
+
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.15);
+        } catch (e) {
+          console.log("Audio not supported");
+        }
+      }
+
+      async function onScanSuccess(decodedText, decodedResult) {
+        if (decodedText === lastScannedCode) {
+          return; // Prevent duplicate scans
+        }
+
+        lastScannedCode = decodedText;
+        console.log("✅ Barcode detected:", decodedText);
+
+        playBeep();
+
+        // Update UI with scanned code
+        trackingNumber.textContent = decodedText;
+        scannerResult.style.display = "block";
+        copyScannedCode.style.display = "inline-block";
+
+        // Try to find matching shipment
+        try {
+          const shipment = appData.shipments.find(
+            (s) => s.trackingNumber === decodedText
+          );
+          if (shipment) {
+            const customer = appData.customers.find(
+              (c) => c._id === shipment.customerId
+            );
+            const statusSpan = scannerResult.querySelector(".status");
+            const customerNameSpan = document.getElementById(
+              "scannerCustomerName"
+            );
+
+            if (statusSpan) {
+              statusSpan.className = `status status-${shipment.status}`;
+              statusSpan.textContent =
+                shipment.status.charAt(0).toUpperCase() +
+                shipment.status.slice(1);
+            }
+
+            if (customerNameSpan && customer) {
+              customerNameSpan.textContent = customer.name;
+            } else if (customerNameSpan) {
+              customerNameSpan.textContent = "Unknown";
+            }
+
+            showNotification(`Shipment ${decodedText} found!`, "success");
+          } else {
+            showNotification(
+              `Scanned: ${decodedText} - No matching shipment in system`,
+              "info"
+            );
+            document.getElementById("scannerCustomerName").textContent = "-";
+          }
+        } catch (error) {
+          console.error("Error looking up shipment:", error);
+        }
+
+        // Scroll to result
+        scannerResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+        // Auto stop after successful scan
+        setTimeout(() => {
+          stopScanner();
+        }, 500);
+      }
+
+      function onScanError(errorMessage) {
+        // Ignore scan errors (happens when no barcode in frame)
+      }
+
+      async function startScanner() {
+        try {
+          html5QrCode = new Html5Qrcode("reader");
+
+          const config = {
+            fps: 10,
+            qrbox: { width: 300, height: 150 },
+            aspectRatio: 1.777778,
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.CODABAR,
+              Html5QrcodeSupportedFormats.ITF,
+              Html5QrcodeSupportedFormats.CODE_93,
+            ],
+          };
+
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanError
+          );
+
+          isScanning = true;
+          console.log("📷 Barcode scanner started");
+        } catch (err) {
+          console.error("Failed to start scanner:", err);
+          showNotification(
+            "Could not access camera. Please grant camera permissions.",
+            "error"
+          );
+          scannerView.style.display = "none";
+          toggleScanner.innerHTML =
+            '<i class="fas fa-camera"></i> Start Scanner';
+        }
+      }
+
+      async function stopScanner() {
+        if (isScanning && html5QrCode) {
+          try {
+            await html5QrCode.stop();
+            isScanning = false;
+            console.log("📷 Scanner stopped");
+          } catch (err) {
+            console.error("Error stopping scanner:", err);
+          }
+        }
+      }
+
+      toggleScanner.addEventListener("click", async function () {
         const isScannerVisible = scannerView.style.display !== "none";
 
         if (isScannerVisible) {
+          await stopScanner();
           scannerView.style.display = "none";
           scannerControls.style.display = "none";
-          scannerResult.style.display = "none";
           toggleScanner.innerHTML =
             '<i class="fas fa-camera"></i> Start Scanner';
         } else {
@@ -2399,29 +2531,23 @@
           scannerControls.style.display = "flex";
           toggleScanner.innerHTML = '<i class="fas fa-stop"></i> Stop Scanner';
 
-          // Auto-simulate scan after 3 seconds for demo purposes
-          setTimeout(() => {
-            if (scannerView.style.display !== "none") {
-              simulateScan.click();
-            }
-          }, 3000);
+          lastScannedCode = "";
+          await startScanner();
         }
       });
 
-      simulateScan.addEventListener("click", function () {
-        const trackingNumbers = [
-          "TRK789123456",
-          "TRK456987123",
-          "TRK321654987",
-        ];
-        const randomTracking =
-          trackingNumbers[Math.floor(Math.random() * trackingNumbers.length)];
-
-        trackingNumber.textContent = randomTracking;
-        scannerResult.style.display = "block";
-
-        // Scroll to result
-        scannerResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      copyScannedCode.addEventListener("click", function () {
+        if (lastScannedCode) {
+          navigator.clipboard
+            .writeText(lastScannedCode)
+            .then(() => {
+              showNotification("Barcode copied to clipboard!", "success");
+            })
+            .catch((err) => {
+              console.error("Failed to copy:", err);
+              showNotification("Failed to copy to clipboard", "error");
+            });
+        }
       });
 
       // Tracking functionality (basic demo)
@@ -2552,7 +2678,7 @@
       }
 
       function loadDemoData() {
-        console.log(false)
+        console.log(false);
         return false;
         // Demo data for when backend is not available (user is authenticated)
         appData = {
@@ -4446,6 +4572,13 @@
           debugAdminAccess();
         }
       }, 500);
+
+      // Cleanup scanner on page unload
+      window.addEventListener("beforeunload", async function () {
+        if (isScanning && html5QrCode) {
+          await stopScanner();
+        }
+      });
     </script>
   </body>
 </html>

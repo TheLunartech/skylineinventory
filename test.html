@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Barcode Scanner</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+      }
+      h2 {
+        margin: 20px 0;
+        font-size: 2em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      #scanner-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+      #reader {
+        width: 100%;
+        border: none;
+      }
+      #result-container {
+        margin-top: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        min-width: 300px;
+        max-width: 600px;
+        width: 100%;
+      }
+      #result {
+        font-size: 1.1em;
+        margin-bottom: 10px;
+        color: #fff;
+      }
+      #barcode-result {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #4ade80;
+        word-break: break-all;
+        margin: 15px 0;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        display: none;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+      button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1em;
+        transition: all 0.3s ease;
+      }
+      #stop-btn {
+        background: #ef4444;
+        color: #fff;
+      }
+      #stop-btn:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+      }
+      #start-btn {
+        background: #10b981;
+        color: #fff;
+        display: none;
+      }
+      #start-btn:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+      }
+      .status {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .success-message {
+        color: #4ade80;
+      }
+      .error-message {
+        color: #fca5a5;
+        margin-top: 10px;
+      }
+      #format-type {
+        font-size: 0.9em;
+        color: #93c5fd;
+        margin-top: 5px;
+      }
+      #reader__scan_region {
+        border: 3px solid rgba(0, 255, 0, 0.8) !important;
+      }
+      /* Hide html5-qrcode branding */
+      #reader__dashboard_section {
+        display: none !important;
+      }
+      .copy-btn {
+        background: #3b82f6;
+        color: #fff;
+        padding: 8px 16px;
+        font-size: 0.9em;
+        margin-left: 10px;
+      }
+      .copy-btn:hover {
+        background: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>📦 Barcode Scanner</h2>
+
+    <div id="scanner-container">
+      <div id="reader"></div>
+    </div>
+
+    <div id="result-container">
+      <div id="result">
+        <span class="status"></span>
+        Initializing scanner...
+      </div>
+      <div id="barcode-result"></div>
+      <div id="format-type"></div>
+      <div class="controls">
+        <button id="stop-btn">Stop Scanner</button>
+        <button id="start-btn">Start Scanner</button>
+        <button id="copy-btn" class="copy-btn" style="display: none">
+          Copy Code
+        </button>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+      const resultDiv = document.getElementById("result");
+      const barcodeResultDiv = document.getElementById("barcode-result");
+      const formatTypeDiv = document.getElementById("format-type");
+      const stopBtn = document.getElementById("stop-btn");
+      const startBtn = document.getElementById("start-btn");
+      const copyBtn = document.getElementById("copy-btn");
+
+      let html5QrCode;
+      let isScanning = false;
+      let lastCode = "";
+
+      function playBeep() {
+        try {
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.frequency.value = 800;
+          oscillator.type = "sine";
+          gainNode.gain.value = 0.3;
+
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.15);
+        } catch (e) {
+          console.log("Audio not supported");
+        }
+      }
+
+      function onScanSuccess(decodedText, decodedResult) {
+        if (decodedText === lastCode) {
+          return; // Prevent duplicate scans
+        }
+
+        lastCode = decodedText;
+        console.log("✅ Barcode detected:", decodedText);
+        console.log(
+          "Format:",
+          decodedResult.result.format?.formatName || "Unknown"
+        );
+
+        resultDiv.innerHTML =
+          '<span class="success-message">✅ <strong>Barcode Detected!</strong></span>';
+        barcodeResultDiv.textContent = decodedText;
+        barcodeResultDiv.style.display = "block";
+        formatTypeDiv.textContent = `Format: ${
+          decodedResult.result.format?.formatName || "Unknown"
+        }`;
+        copyBtn.style.display = "inline-block";
+
+        playBeep();
+
+        // Auto stop after successful scan
+        setTimeout(() => {
+          stopScanner();
+        }, 500);
+      }
+
+      function onScanError(errorMessage) {
+        // Ignore scan errors (happens when no barcode in frame)
+        // console.log("Scan error:", errorMessage);
+      }
+
+      async function startScanner() {
+        try {
+          html5QrCode = new Html5Qrcode("reader");
+
+          const config = {
+            fps: 10,
+            qrbox: { width: 300, height: 150 },
+            aspectRatio: 1.777778,
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.CODABAR,
+              Html5QrcodeSupportedFormats.ITF,
+              Html5QrcodeSupportedFormats.CODE_93,
+            ],
+          };
+
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanError
+          );
+
+          isScanning = true;
+          resultDiv.innerHTML =
+            '<span class="status"></span>Scanning... Point barcode at the green box';
+          stopBtn.style.display = "inline-block";
+          startBtn.style.display = "none";
+          console.log("Scanner started successfully");
+        } catch (err) {
+          console.error("Failed to start scanner:", err);
+          resultDiv.innerHTML = `<span class="error-message">❌ Error: ${
+            err.message || "Could not access camera"
+          }</span>`;
+          stopBtn.style.display = "none";
+          startBtn.style.display = "inline-block";
+        }
+      }
+
+      async function stopScanner() {
+        if (isScanning && html5QrCode) {
+          try {
+            await html5QrCode.stop();
+            isScanning = false;
+            resultDiv.innerHTML = "⏸️ Scanner stopped";
+            stopBtn.style.display = "none";
+            startBtn.style.display = "inline-block";
+            console.log("Scanner stopped");
+          } catch (err) {
+            console.error("Error stopping scanner:", err);
+          }
+        }
+      }
+
+      function copyToClipboard() {
+        if (lastCode) {
+          navigator.clipboard
+            .writeText(lastCode)
+            .then(() => {
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = "✓ Copied!";
+              setTimeout(() => {
+                copyBtn.textContent = originalText;
+              }, 2000);
+            })
+            .catch((err) => {
+              console.error("Failed to copy:", err);
+              alert("Failed to copy to clipboard");
+            });
+        }
+      }
+
+      stopBtn.addEventListener("click", stopScanner);
+      startBtn.addEventListener("click", () => {
+        lastCode = "";
+        barcodeResultDiv.style.display = "none";
+        formatTypeDiv.textContent = "";
+        copyBtn.style.display = "none";
+        startScanner();
+      });
+      copyBtn.addEventListener("click", copyToClipboard);
+
+      // Auto-start on page load
+      window.addEventListener("load", function () {
+        startScanner();
+      });
+
+      // Cleanup on page unload
+      window.addEventListener("beforeunload", async function () {
+        if (isScanning) {
+          await stopScanner();
+        }
+      });
+    </script>
+  </body>
+</html>
