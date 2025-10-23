@@ -490,6 +490,22 @@
         font-weight: 600;
       }
 
+      .scanner-action-select {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: var(--radius);
+      }
+
+      .scanner-action-option:has(input:checked) {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+      }
+
+      .scanner-action-option:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+      }
+
       .scanner-view {
         width: 100%;
         background: #1a2530;
@@ -963,6 +979,66 @@
                 Scan parcel barcodes or container IDs to quickly register or
                 update status
               </p>
+
+              <!-- Scanner Action Selection -->
+              <div class="scanner-action-select" id="scannerActionSelect">
+                <label
+                  style="
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                    display: block;
+                    color: white;
+                  ">
+                  Select Action:
+                </label>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="loading"
+                      checked
+                      style="width: 18px; height: 18px" />
+                    <span style="color: white; font-weight: 500">
+                      <i class="fas fa-box-open"></i> Loading (From China)
+                    </span>
+                  </label>
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="receiving"
+                      style="width: 18px; height: 18px" />
+                    <span style="color: white; font-weight: 500">
+                      <i class="fas fa-truck-loading"></i> Receiving (In Ghana)
+                    </span>
+                  </label>
+                </div>
+              </div>
 
               <div class="scanner-view" id="scannerView" style="display: none">
                 <div id="reader"></div>
@@ -2396,6 +2472,51 @@
         }
       }
 
+      // Get or create today's active container
+      async function getOrCreateTodaysContainer() {
+        try {
+          // Generate today's container number
+          const today = new Date();
+          const dateStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+          const containerNumber = `CNT-${dateStr.replace(/-/g, "")}`;
+
+          // Check if container already exists
+          let container = appData.containers.find(
+            (c) => c.containerNumber === containerNumber
+          );
+
+          if (container) {
+            console.log("📦 Using existing container:", containerNumber);
+            return container;
+          }
+
+          // Create new container for today
+          console.log("📦 Creating new container:", containerNumber);
+          const newContainer = await containersAPI.create({
+            containerNumber: containerNumber,
+            type: "Standard",
+            status: "loading",
+            currentLocation: "China Warehouse",
+            capacity: 100,
+            shipments: [],
+          });
+
+          // Add to local data
+          appData.containers.push(newContainer);
+          populateContainers();
+
+          showNotification(
+            `📦 Created new container: ${containerNumber}`,
+            "info"
+          );
+
+          return newContainer;
+        } catch (error) {
+          console.error("Error creating container:", error);
+          throw error;
+        }
+      }
+
       async function onScanSuccess(decodedText, decodedResult) {
         if (decodedText === lastScannedCode) {
           return; // Prevent duplicate scans
@@ -2406,12 +2527,22 @@
 
         playBeep();
 
+        // Get selected action
+        const selectedAction = document.querySelector(
+          'input[name="scannerAction"]:checked'
+        ).value;
+        const actionText =
+          selectedAction === "loading"
+            ? "Loading (From China)"
+            : "Receiving (In Ghana)";
+        console.log("📦 Action:", actionText);
+
         // Update UI with scanned code
         trackingNumber.textContent = decodedText;
         scannerResult.style.display = "block";
         copyScannedCode.style.display = "inline-block";
 
-        // Try to find matching shipment
+        // Try to find matching shipment and update status
         try {
           const shipment = appData.shipments.find(
             (s) => s.trackingNumber === decodedText
@@ -2425,29 +2556,121 @@
               "scannerCustomerName"
             );
 
-            if (statusSpan) {
-              statusSpan.className = `status status-${shipment.status}`;
-              statusSpan.textContent =
-                shipment.status.charAt(0).toUpperCase() +
-                shipment.status.slice(1);
-            }
+            // Update shipment status based on action
+            const newStatus =
+              selectedAction === "loading" ? "in-transit" : "received";
 
-            if (customerNameSpan && customer) {
-              customerNameSpan.textContent = customer.name;
-            } else if (customerNameSpan) {
-              customerNameSpan.textContent = "Unknown";
-            }
+            // Handle loading action with container auto-grouping
+            if (selectedAction === "loading") {
+              try {
+                // Get or create today's container
+                const container = await getOrCreateTodaysContainer();
 
-            showNotification(`Shipment ${decodedText} found!`, "success");
+                // Update shipment with container and status
+                const updatedShipment = await shipmentsAPI.update(
+                  shipment._id,
+                  {
+                    status: newStatus,
+                    containerId: container._id,
+                  }
+                );
+
+                // Update local data
+                const index = appData.shipments.findIndex(
+                  (s) => s._id === shipment._id
+                );
+                if (index !== -1) {
+                  appData.shipments[index] = updatedShipment;
+                }
+
+                if (statusSpan) {
+                  statusSpan.className = `status status-${newStatus}`;
+                  statusSpan.textContent = "In Transit";
+                }
+
+                if (customerNameSpan && customer) {
+                  customerNameSpan.textContent = customer.name;
+                } else if (customerNameSpan) {
+                  customerNameSpan.textContent = "Unknown";
+                }
+
+                showNotification(
+                  `✅ ${decodedText} loaded into ${container.containerNumber} - Status: In Transit`,
+                  "success"
+                );
+
+                // Refresh displays
+                populateShipments();
+                populateDashboard();
+                populateContainers();
+              } catch (error) {
+                console.error("Error loading shipment:", error);
+                showNotification(
+                  `Error adding ${decodedText} to container`,
+                  "error"
+                );
+              }
+            } else {
+              // Receiving action - just update status
+              try {
+                const updatedShipment = await shipmentsAPI.update(
+                  shipment._id,
+                  {
+                    status: newStatus,
+                  }
+                );
+
+                // Update local data
+                const index = appData.shipments.findIndex(
+                  (s) => s._id === shipment._id
+                );
+                if (index !== -1) {
+                  appData.shipments[index] = updatedShipment;
+                }
+
+                if (statusSpan) {
+                  statusSpan.className = `status status-${newStatus}`;
+                  statusSpan.textContent = "Received";
+                }
+
+                if (customerNameSpan && customer) {
+                  customerNameSpan.textContent = customer.name;
+                } else if (customerNameSpan) {
+                  customerNameSpan.textContent = "Unknown";
+                }
+
+                showNotification(
+                  `✅ ${decodedText} - Received in Ghana`,
+                  "success"
+                );
+
+                // Refresh displays
+                populateShipments();
+                populateDashboard();
+              } catch (error) {
+                console.error("Error receiving shipment:", error);
+                showNotification(
+                  `Found ${decodedText} but failed to update status`,
+                  "error"
+                );
+              }
+            }
           } else {
             showNotification(
-              `Scanned: ${decodedText} - No matching shipment in system`,
-              "info"
+              `⚠️ ${decodedText} - Not found in system`,
+              "warning"
             );
             document.getElementById("scannerCustomerName").textContent = "-";
+
+            const statusSpan = scannerResult.querySelector(".status");
+            if (statusSpan) {
+              statusSpan.className = "status status-pending";
+              statusSpan.textContent = "Not Found";
+            }
           }
         } catch (error) {
           console.error("Error looking up shipment:", error);
+          showNotification("Error processing scan", "error");
         }
 
         // Scroll to result
