@@ -42,3 +42,4 @@ class TrackingAPI {
 // Create global instance
 window.trackingAPI = new TrackingAPI();
 
+

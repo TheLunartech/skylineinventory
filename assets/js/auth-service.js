@@ -116,16 +116,16 @@ class AuthService {
   }
 
   /**
-   * Login with email and password
+   * Login with email, password, and organization
    */
-  async login(email, password) {
+  async login(email, password, organization) {
     try {
       const response = await fetch(`${this.baseUrl}${this.endpoints.LOGIN}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, organization }),
       });
 
       const data = await response.json();
@@ -287,18 +287,18 @@ class AuthService {
   }
 
   /**
-   * Check if user has specific role
+   * Check if user has specific role (case-insensitive)
    */
   hasRole(role) {
     const user = this.getCurrentUser();
-    return user && user.role === role;
+    return user && user.role && user.role.toLowerCase() === role.toLowerCase();
   }
 
   /**
    * Check if user is admin
    */
   isAdmin() {
-    return this.hasRole("ADMIN");
+    return this.hasRole("admin");
   }
 }
 

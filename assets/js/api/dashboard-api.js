@@ -38,3 +38,4 @@ class DashboardAPI {
 // Create global instance
 window.dashboardAPI = new DashboardAPI();
 
+

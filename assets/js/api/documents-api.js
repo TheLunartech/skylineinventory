@@ -60,3 +60,4 @@ class DocumentsAPI {
 // Create global instance
 window.documentsAPI = new DocumentsAPI();
 
+

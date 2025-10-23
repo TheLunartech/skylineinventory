@@ -28,7 +28,6 @@
       href="https://cdn.jsdelivr.net/npm/@iconscout/unicons@4.0.8/css/line.min.css" />
 
     <script>
-      
       // Render localStorage JS:
       if (localStorage.theme)
         document.documentElement.setAttribute("data-theme", localStorage.theme);
@@ -60,6 +59,25 @@
               <h2 class="geex-content__authentication__title">
                 Sing In to Your Account 👋
               </h2>
+              <div class="geex-content__authentication__form-group">
+                <label for="organizationSelect">Organization</label>
+                <select
+                  id="organizationSelect"
+                  name="organizationSelect"
+                  required
+                  style="
+                    width: 100%;
+                    padding: 12px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    background-color: white;
+                  ">
+                  <option value="">Select Organization</option>
+                  <option value="skyline">Skyline Inventory</option>
+                  <option value="skyrak">Skyrak Logistics</option>
+                </select>
+              </div>
               <div class="geex-content__authentication__form-group">
                 <label for="emailSignIn">Your Email</label>
                 <input
@@ -167,17 +185,26 @@
             submitButton.textContent = "Signing In...";
 
             // Get form values
+            const organization =
+              document.getElementById("organizationSelect").value;
             const email = document.getElementById("emailSignIn").value.trim();
             const password = document.getElementById("loginPassword").value;
             const rememberMe = document.getElementById("rememberMe").checked;
 
             // Validate inputs
+            if (!organization) {
+              throw new Error("Please select an organization");
+            }
             if (!email || !password) {
               throw new Error("Please enter both email and password");
             }
 
-            // Call login API
-            const response = await authService.login(email, password);
+            // Call login API with organization
+            const response = await authService.login(
+              email,
+              password,
+              organization
+            );
 
             // Show success message
             alert("Login successful! Welcome back, " + response.user.name);

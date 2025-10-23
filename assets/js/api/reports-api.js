@@ -60,3 +60,4 @@ class ReportsAPI {
 // Create global instance
 window.reportsAPI = new ReportsAPI();
 
+

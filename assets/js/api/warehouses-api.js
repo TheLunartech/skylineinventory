@@ -50,3 +50,4 @@ class WarehousesAPI {
 // Create global instance
 window.warehousesAPI = new WarehousesAPI();
 
+

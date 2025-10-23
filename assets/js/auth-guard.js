@@ -92,7 +92,8 @@ class AuthGuard {
    * Show or hide admin-only features based on user role
    */
   static updateAdminFeatures(role) {
-    const isAdmin = role === "admin";
+    // Case-insensitive admin check
+    const isAdmin = role && role.toLowerCase() === "admin";
 
     // Show/hide staffs nav item
     const staffsNavItem = document.getElementById("staffsNavItem");
@@ -100,6 +101,8 @@ class AuthGuard {
       staffsNavItem.style.display = isAdmin ? "block" : "none";
       if (isAdmin) {
         console.log("✅ Admin access granted - Staffs tab visible");
+      } else {
+        console.log("❌ Not admin - role:", role);
       }
     }
   }

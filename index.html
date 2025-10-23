@@ -399,10 +399,12 @@
       .search-container {
         position: relative;
         max-width: 400px;
+        /*display: none;*/
       }
 
       .search-input {
         padding-left: 40px;
+        
       }
 
       .search-icon {
@@ -411,6 +413,7 @@
         top: 50%;
         transform: translateY(-50%);
         color: var(--gray);
+        /*display: none;*/
       }
 
       /* Tabs */
@@ -905,12 +908,6 @@
 
       <!-- Main Content -->
       <div class="main-content">
-        <!-- Demo Mode Banner -->
-        <div class="demo-banner" id="demoBanner">
-          <i class="fas fa-info-circle"></i>
-          You are viewing demo data. Sign in to access real-time backend data.
-        </div>
-
         <!-- Header -->
         <header class="header">
           <button class="menu-toggle" id="menuToggle">
@@ -1858,6 +1855,101 @@
       </div>
     </div>
 
+    <!-- Edit Shipment Modal -->
+    <div class="modal" id="editShipmentModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Edit Shipment</h2>
+          <button class="modal-close" onclick="closeModal('editShipmentModal')">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="editShipmentForm">
+            <input type="hidden" id="editShipmentId" />
+            <div class="form-group">
+              <label>Tracking Number *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="editShipmentTracking"
+                placeholder="e.g., TRK123456789"
+                required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Customer *</label>
+                <select class="form-control" id="editShipmentCustomer" required>
+                  <option value="">Select Customer</option>
+                </select>
+                <small class="text-muted">Select from existing customers</small>
+              </div>
+              <div class="form-group">
+                <label>CBM (Cubic Meters)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="form-control"
+                  id="editShipmentWeight"
+                  placeholder="e.g., 2.5" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Status</label>
+                <select class="form-control" id="editShipmentStatus">
+                  <option value="received">Received</option>
+                  <option value="inspected">Inspected</option>
+                  <option value="loaded">Loaded</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="arrived_ghana">Arrived in Ghana</option>
+                  <option value="delivered">Delivered</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Container</label>
+                <select class="form-control" id="editShipmentContainer">
+                  <option value="">No Container</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Origin Warehouse</label>
+                <select class="form-control" id="editShipmentOriginWarehouse">
+                  <option value="">Select Warehouse</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Current Warehouse</label>
+                <select class="form-control" id="editShipmentCurrentWarehouse">
+                  <option value="">Select Warehouse</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea
+                class="form-control"
+                id="editShipmentDescription"
+                rows="3"
+                placeholder="Shipment details..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-outline"
+            onclick="closeModal('editShipmentModal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="updateShipment()">
+            <i class="fas fa-save"></i> Update Shipment
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Add Customer Modal -->
     <div class="modal" id="addCustomerModal">
       <div class="modal-content">
@@ -2386,35 +2478,46 @@
         stats: {},
       };
 
+      // Require authentication
+      if (window.AuthGuard) {
+        AuthGuard.requireAuth();
+      }
+
       // Initialize app with backend data
       window.addEventListener("apisLoaded", async () => {
-        // Check authentication but don't force redirect
-        const isAuthenticated =
-          window.authService && authService.isAuthenticated();
-
-        if (isAuthenticated && window.AuthGuard) {
+        // Initialize user info
+        if (window.AuthGuard) {
           AuthGuard.initUserInfo();
 
-          // Ensure admin features are updated
+          // FORCE enable admin features
           const user = authService.getCurrentUser();
           if (user && user.role) {
             console.log("👤 Current user role:", user.role);
+
+            // Direct check and enable
+            const staffsNavItem = document.getElementById("staffsNavItem");
+            if (user.role.toLowerCase() === "admin" && staffsNavItem) {
+              staffsNavItem.style.display = "block";
+              console.log("✅ ADMIN ACCESS ENABLED - Staffs tab visible");
+            }
+
             AuthGuard.updateAdminFeatures(user.role);
           }
         }
 
         try {
-          if (isAuthenticated) {
-            await loadAllData();
-            console.log("✅ App initialized with backend data");
-          } else {
-            console.log("⚠️ Not authenticated, using demo data");
-            loadDemoData();
-          }
+          await loadAllData();
+          console.log("✅ App initialized with backend data");
         } catch (error) {
           console.error("❌ Error initializing app:", error.message);
-          console.log("⚠️ Falling back to demo data");
-          loadDemoData();
+          console.log("⚠️ No data loaded - showing empty state");
+          // Don't load demo data - just show empty state
+          populateDashboard();
+          populateContainers();
+          populateShipments();
+          populateCustomers();
+          populateWarehouses();
+          populateDocuments();
         }
       });
 
@@ -2449,13 +2552,9 @@
       }
 
       function loadDemoData() {
-        // Show demo mode banner
-        const demoBanner = document.getElementById("demoBanner");
-        if (demoBanner) {
-          demoBanner.classList.add("show");
-        }
-
-        // Demo data for when backend is not available
+        console.log(false)
+        return false;
+        // Demo data for when backend is not available (user is authenticated)
         appData = {
           stats: {},
           containers: [
@@ -3218,13 +3317,7 @@
 
       console.log("✅ SkylineInventory app loaded with backend integration");
 
-      // Fallback: If APIs don't load within 3 seconds, use demo data
-      setTimeout(() => {
-        if (appData.containers.length === 0 && appData.shipments.length === 0) {
-          console.log("⚠️ API loader timeout, using demo data");
-          loadDemoData();
-        }
-      }, 3000);
+      // No demo data fallback - authenticated users see real data or empty state
 
       // ========== MODAL FUNCTIONS ==========
 
@@ -3962,10 +4055,183 @@
       function editItem(type, id) {
         if (type === "container") {
           editContainer(id);
+        } else if (type === "shipment") {
+          editShipment(id);
         } else {
           showNotification(
             "Edit functionality coming soon for " + type + "!",
             "info"
+          );
+        }
+      }
+
+      function editShipment(id) {
+        // Find the shipment
+        const shipment = appData.shipments.find(
+          (s) => s._id === id || s.trackingNumber === id
+        );
+
+        if (!shipment) {
+          showNotification("Shipment not found", "error");
+          return;
+        }
+
+        // Populate dropdowns
+        populateEditShipmentDropdowns();
+
+        // Fill form with shipment data
+        document.getElementById("editShipmentId").value = shipment._id || id;
+        document.getElementById("editShipmentTracking").value =
+          shipment.trackingNumber || "";
+        document.getElementById("editShipmentCustomer").value =
+          shipment.customerId || "";
+        document.getElementById("editShipmentWeight").value =
+          shipment.cbm || "";
+        document.getElementById("editShipmentStatus").value =
+          shipment.status || "received";
+        document.getElementById("editShipmentContainer").value =
+          shipment.containerId || "";
+        document.getElementById("editShipmentOriginWarehouse").value =
+          shipment.originWarehouseId || "";
+        document.getElementById("editShipmentCurrentWarehouse").value =
+          shipment.currentWarehouseId || "";
+        document.getElementById("editShipmentDescription").value =
+          shipment.description || "";
+
+        // Open the modal
+        openModal("editShipmentModal");
+      }
+
+      function populateEditShipmentDropdowns() {
+        // Populate customers dropdown
+        const customerSelect = document.getElementById("editShipmentCustomer");
+        customerSelect.innerHTML = '<option value="">Select Customer</option>';
+        appData.customers.forEach((customer) => {
+          const option = document.createElement("option");
+          option.value = customer._id;
+          option.textContent = customer.name || customer.email;
+          customerSelect.appendChild(option);
+        });
+
+        // Populate containers dropdown
+        const containerSelect = document.getElementById(
+          "editShipmentContainer"
+        );
+        containerSelect.innerHTML = '<option value="">No Container</option>';
+        appData.containers.forEach((container) => {
+          const option = document.createElement("option");
+          option.value = container._id;
+          option.textContent = container.containerNumber;
+          containerSelect.appendChild(option);
+        });
+
+        // Populate warehouses dropdowns
+        const originWarehouseSelect = document.getElementById(
+          "editShipmentOriginWarehouse"
+        );
+        const currentWarehouseSelect = document.getElementById(
+          "editShipmentCurrentWarehouse"
+        );
+
+        originWarehouseSelect.innerHTML =
+          '<option value="">Select Warehouse</option>';
+        currentWarehouseSelect.innerHTML =
+          '<option value="">Select Warehouse</option>';
+
+        appData.warehouses.forEach((warehouse) => {
+          const option1 = document.createElement("option");
+          option1.value = warehouse._id;
+          option1.textContent = warehouse.name;
+          originWarehouseSelect.appendChild(option1);
+
+          const option2 = document.createElement("option");
+          option2.value = warehouse._id;
+          option2.textContent = warehouse.name;
+          currentWarehouseSelect.appendChild(option2);
+        });
+      }
+
+      async function updateShipment() {
+        try {
+          const shipmentId = document.getElementById("editShipmentId").value;
+          const trackingNumber = document
+            .getElementById("editShipmentTracking")
+            .value.trim();
+          const customerId = document.getElementById(
+            "editShipmentCustomer"
+          ).value;
+          const cbm = parseFloat(
+            document.getElementById("editShipmentWeight").value
+          );
+          const status = document.getElementById("editShipmentStatus").value;
+          const containerId = document.getElementById(
+            "editShipmentContainer"
+          ).value;
+          const originWarehouseId = document.getElementById(
+            "editShipmentOriginWarehouse"
+          ).value;
+          const currentWarehouseId = document.getElementById(
+            "editShipmentCurrentWarehouse"
+          ).value;
+          const description = document
+            .getElementById("editShipmentDescription")
+            .value.trim();
+
+          // Validation
+          if (!trackingNumber) {
+            showNotification("Please enter a tracking number", "error");
+            return;
+          }
+
+          if (!customerId) {
+            showNotification("Please select a customer", "error");
+            return;
+          }
+
+          const shipmentData = {
+            trackingNumber,
+            customerId,
+            status,
+            description,
+          };
+
+          if (cbm && !isNaN(cbm)) {
+            shipmentData.cbm = cbm;
+          }
+
+          if (containerId) {
+            shipmentData.containerId = containerId;
+          }
+
+          if (originWarehouseId) {
+            shipmentData.originWarehouseId = originWarehouseId;
+          }
+
+          if (currentWarehouseId) {
+            shipmentData.currentWarehouseId = currentWarehouseId;
+          }
+
+          // Update via API
+          const updated = await shipmentsAPI.update(shipmentId, shipmentData);
+
+          // Update local data
+          const index = appData.shipments.findIndex(
+            (s) => s._id === shipmentId || s.trackingNumber === shipmentId
+          );
+          if (index !== -1) {
+            appData.shipments[index] = updated;
+          }
+
+          showNotification("Shipment updated successfully!", "success");
+
+          populateShipments();
+          populateDashboard();
+          closeModal("editShipmentModal");
+        } catch (error) {
+          console.error("Error updating shipment:", error);
+          showNotification(
+            "Error updating shipment: " + error.message,
+            "error"
           );
         }
       }
@@ -4157,7 +4423,7 @@
         console.log("Staffs nav item found:", !!staffsNavItem);
         console.log("Staffs nav item display:", staffsNavItem?.style.display);
 
-        if (user?.role === "admin") {
+        if (user?.role && user.role.toLowerCase() === "admin") {
           console.log("✅ User is admin - showing staffs tab");
           if (staffsNavItem) {
             staffsNavItem.style.display = "block";
@@ -4169,10 +4435,17 @@
 
         return {
           user,
-          isAdmin: user?.role === "admin",
+          isAdmin: user?.role && user.role.toLowerCase() === "admin",
           staffsTabVisible: staffsNavItem?.style.display === "block",
         };
       };
+
+      // Auto-call debugAdminAccess after a short delay to ensure everything is loaded
+      setTimeout(() => {
+        if (authService?.isAuthenticated()) {
+          debugAdminAccess();
+        }
+      }, 500);
     </script>
   </body>
 </html>
