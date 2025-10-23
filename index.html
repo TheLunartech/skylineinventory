@@ -140,6 +140,172 @@
         gap: 1.5rem;
       }
 
+      .notification-bell {
+        position: relative;
+      }
+
+      .notification-bell .btn {
+        position: relative;
+      }
+
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: var(--danger);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        animation: pulse-badge 2s infinite;
+      }
+
+      @keyframes pulse-badge {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      .notification-panel {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 380px;
+        max-height: 500px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        display: none;
+        flex-direction: column;
+        z-index: 1000;
+      }
+
+      .notification-panel.show {
+        display: flex;
+      }
+
+      .notification-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .notification-header h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+      }
+
+      .notification-clear {
+        color: var(--primary);
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .notification-clear:hover {
+        text-decoration: underline;
+      }
+
+      .notification-list {
+        overflow-y: auto;
+        max-height: 400px;
+      }
+
+      .notification-item {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        gap: 12px;
+      }
+
+      .notification-item:hover {
+        background: #f9fafb;
+      }
+
+      .notification-item.unread {
+        background: #eff6ff;
+      }
+
+      .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .notification-icon.success {
+        background: #d1fae5;
+        color: var(--success);
+      }
+
+      .notification-icon.info {
+        background: #dbeafe;
+        color: var(--primary);
+      }
+
+      .notification-icon.warning {
+        background: #fef3c7;
+        color: var(--warning);
+      }
+
+      .notification-icon.error {
+        background: #fee2e2;
+        color: var(--danger);
+      }
+
+      .notification-content {
+        flex: 1;
+      }
+
+      .notification-title {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--dark);
+        margin-bottom: 4px;
+      }
+
+      .notification-message {
+        font-size: 0.813rem;
+        color: var(--secondary);
+        line-height: 1.4;
+      }
+
+      .notification-time {
+        font-size: 0.75rem;
+        color: var(--gray);
+        margin-top: 4px;
+      }
+
+      .notification-empty {
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: var(--gray);
+      }
+
+      .notification-empty i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+      }
+
       .user-profile {
         display: flex;
         align-items: center;
@@ -343,7 +509,8 @@
         color: #065f46;
       }
 
-      .status-in-transit {
+      .status-in-transit,
+      .status-in_transit {
         background: #dbeafe;
         color: #1e40af;
       }
@@ -498,8 +665,9 @@
       }
 
       .scanner-action-option:has(input:checked) {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
+        background: rgba(74, 222, 128, 0.2) !important;
+        border-color: #4ade80 !important;
+        box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.5);
       }
 
       .scanner-action-option:hover {
@@ -929,9 +1097,33 @@
                 class="form-control search-input"
                 placeholder="Search..." />
             </div>
-            <button class="btn btn-outline">
-              <i class="fas fa-bell"></i>
-            </button>
+            <div class="notification-bell">
+              <button class="btn btn-outline" id="notificationBell">
+                <i class="fas fa-bell"></i>
+                <span
+                  class="notification-badge"
+                  id="notificationBadge"
+                  style="display: none"
+                  >0</span
+                >
+              </button>
+
+              <!-- Notification Panel -->
+              <div class="notification-panel" id="notificationPanel">
+                <div class="notification-header">
+                  <h3>Notifications</h3>
+                  <a href="#" class="notification-clear" id="clearNotifications"
+                    >Clear All</a
+                  >
+                </div>
+                <div class="notification-list" id="notificationList">
+                  <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications yet</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="user-profile">
               <div class="avatar">
                 <img src="assets/img/icon/samiraprofile.png" alt="Samira" />
@@ -991,7 +1183,13 @@
                   ">
                   Select Action:
                 </label>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 0.75rem;
+                  ">
+                  <!-- Loading in China -->
                   <label
                     style="
                       display: flex;
@@ -1008,13 +1206,16 @@
                     <input
                       type="radio"
                       name="scannerAction"
-                      value="loading"
+                      value="loading-china"
                       checked
                       style="width: 18px; height: 18px" />
-                    <span style="color: white; font-weight: 500">
-                      <i class="fas fa-box-open"></i> Loading (From China)
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-box-open"></i> Loading (China)
                     </span>
                   </label>
+
+                  <!-- Receiving in China -->
                   <label
                     style="
                       display: flex;
@@ -1031,10 +1232,111 @@
                     <input
                       type="radio"
                       name="scannerAction"
-                      value="receiving"
+                      value="receiving-china"
                       style="width: 18px; height: 18px" />
-                    <span style="color: white; font-weight: 500">
-                      <i class="fas fa-truck-loading"></i> Receiving (In Ghana)
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-warehouse"></i> Receiving (China)
+                    </span>
+                  </label>
+
+                  <!-- Receiving in Accra -->
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="receiving-accra"
+                      style="width: 18px; height: 18px" />
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-truck-loading"></i> Receiving (Accra)
+                    </span>
+                  </label>
+
+                  <!-- Receiving in Kumasi -->
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="receiving-kumasi"
+                      style="width: 18px; height: 18px" />
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-truck-loading"></i> Receiving (Kumasi)
+                    </span>
+                  </label>
+
+                  <!-- Sending from Accra -->
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="sending-accra"
+                      style="width: 18px; height: 18px" />
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-shipping-fast"></i> Sending (Accra)
+                    </span>
+                  </label>
+
+                  <!-- Sending from Kumasi -->
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      cursor: pointer;
+                      padding: 0.75rem 1rem;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 8px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s;
+                    "
+                    class="scanner-action-option">
+                    <input
+                      type="radio"
+                      name="scannerAction"
+                      value="sending-kumasi"
+                      style="width: 18px; height: 18px" />
+                    <span
+                      style="color: white; font-weight: 500; font-size: 0.9em">
+                      <i class="fas fa-shipping-fast"></i> Sending (Kumasi)
                     </span>
                   </label>
                 </div>
@@ -1087,7 +1389,7 @@
             </div>
 
             <!-- Live Map -->
-            <div class="card">
+            <div class="card" style="display: none;">
               <div class="card-header">
                 <div class="card-title">Live Container Tracking</div>
                 <button class="btn btn-outline">
@@ -2494,11 +2796,9 @@
           console.log("📦 Creating new container:", containerNumber);
           const newContainer = await containersAPI.create({
             containerNumber: containerNumber,
-            type: "Standard",
+            sizeType: "40ft Standard",
             status: "loading",
             currentLocation: "China Warehouse",
-            capacity: 100,
-            shipments: [],
           });
 
           // Add to local data
@@ -2531,11 +2831,61 @@
         const selectedAction = document.querySelector(
           'input[name="scannerAction"]:checked'
         ).value;
-        const actionText =
-          selectedAction === "loading"
-            ? "Loading (From China)"
-            : "Receiving (In Ghana)";
-        console.log("📦 Action:", actionText);
+
+        // Map actions to readable text and determine status/location
+        const actionMap = {
+          "loading-china": {
+            text: "Loading (China)",
+            status: "in_transit",
+            location: "China Warehouse",
+            needsContainer: true,
+          },
+          "receiving-china": {
+            text: "Receiving (China)",
+            status: "received",
+            location: "China Warehouse",
+            needsContainer: false,
+          },
+          "receiving-accra": {
+            text: "Receiving (Accra)",
+            status: "received",
+            location: "Accra Warehouse",
+            needsContainer: false,
+          },
+          "receiving-kumasi": {
+            text: "Receiving (Kumasi)",
+            status: "received",
+            location: "Kumasi Warehouse",
+            needsContainer: false,
+          },
+          "sending-accra": {
+            text: "Sending (Accra)",
+            status: "in_transit",
+            location: "Accra Warehouse",
+            needsContainer: false,
+          },
+          "sending-kumasi": {
+            text: "Sending (Kumasi)",
+            status: "in_transit",
+            location: "Kumasi Warehouse",
+            needsContainer: false,
+          },
+        };
+
+        const actionConfig = actionMap[selectedAction];
+        const actionText = actionConfig.text;
+        const newStatus = actionConfig.status;
+        const currentLocation = actionConfig.location;
+        const needsContainer = actionConfig.needsContainer;
+
+        console.log(
+          "📦 Action:",
+          actionText,
+          "| Status:",
+          newStatus,
+          "| Location:",
+          currentLocation
+        );
 
         // Update UI with scanned code
         trackingNumber.textContent = decodedText;
@@ -2556,12 +2906,8 @@
               "scannerCustomerName"
             );
 
-            // Update shipment status based on action
-            const newStatus =
-              selectedAction === "loading" ? "in-transit" : "received";
-
-            // Handle loading action with container auto-grouping
-            if (selectedAction === "loading") {
+            // Handle actions that need container assignment
+            if (needsContainer) {
               try {
                 // Get or create today's container
                 const container = await getOrCreateTodaysContainer();
@@ -2584,7 +2930,10 @@
                 }
 
                 if (statusSpan) {
-                  statusSpan.className = `status status-${newStatus}`;
+                  statusSpan.className = `status status-${newStatus.replace(
+                    /_/g,
+                    "-"
+                  )}`;
                   statusSpan.textContent = "In Transit";
                 }
 
@@ -2595,7 +2944,7 @@
                 }
 
                 showNotification(
-                  `✅ ${decodedText} loaded into ${container.containerNumber} - Status: In Transit`,
+                  `✅ ${decodedText} - ${actionText} - Loaded into ${container.containerNumber}`,
                   "success"
                 );
 
@@ -2611,12 +2960,13 @@
                 );
               }
             } else {
-              // Receiving action - just update status
+              // Actions without container (receiving/sending)
               try {
                 const updatedShipment = await shipmentsAPI.update(
                   shipment._id,
                   {
                     status: newStatus,
+                    currentLocation: currentLocation,
                   }
                 );
 
@@ -2629,8 +2979,13 @@
                 }
 
                 if (statusSpan) {
-                  statusSpan.className = `status status-${newStatus}`;
-                  statusSpan.textContent = "Received";
+                  statusSpan.className = `status status-${newStatus.replace(
+                    /_/g,
+                    "-"
+                  )}`;
+                  const statusText =
+                    newStatus === "received" ? "Received" : "In Transit";
+                  statusSpan.textContent = statusText;
                 }
 
                 if (customerNameSpan && customer) {
@@ -2640,7 +2995,7 @@
                 }
 
                 showNotification(
-                  `✅ ${decodedText} - Received in Ghana`,
+                  `✅ ${decodedText} - ${actionText} - Status updated`,
                   "success"
                 );
 
@@ -2648,7 +3003,7 @@
                 populateShipments();
                 populateDashboard();
               } catch (error) {
-                console.error("Error receiving shipment:", error);
+                console.error("Error updating shipment:", error);
                 showNotification(
                   `Found ${decodedText} but failed to update status`,
                   "error"
@@ -2656,16 +3011,96 @@
               }
             }
           } else {
-            showNotification(
-              `⚠️ ${decodedText} - Not found in system`,
-              "warning"
-            );
-            document.getElementById("scannerCustomerName").textContent = "-";
+            // Shipment doesn't exist - create it automatically
+            console.log(`📦 Creating new shipment: ${decodedText}`);
 
             const statusSpan = scannerResult.querySelector(".status");
-            if (statusSpan) {
-              statusSpan.className = "status status-pending";
-              statusSpan.textContent = "Not Found";
+            const customerNameSpan = document.getElementById(
+              "scannerCustomerName"
+            );
+
+            try {
+              // Create shipment data
+              const shipmentData = {
+                trackingNumber: decodedText,
+                status: newStatus,
+                currentLocation: currentLocation,
+                description: `Auto-created from scanner - ${actionText}`,
+              };
+
+              if (needsContainer) {
+                // Get or create today's container
+                const container = await getOrCreateTodaysContainer();
+                shipmentData.containerId = container._id;
+
+                // Create the shipment
+                const newShipment = await shipmentsAPI.create(shipmentData);
+
+                // Add to local data
+                appData.shipments.push(newShipment);
+
+                if (statusSpan) {
+                  statusSpan.className = `status status-${newStatus.replace(
+                    /_/g,
+                    "-"
+                  )}`;
+                  statusSpan.textContent = "In Transit (New)";
+                }
+
+                if (customerNameSpan) {
+                  customerNameSpan.textContent = "Not Assigned";
+                }
+
+                showNotification(
+                  `✅ ${decodedText} - ${actionText} - Created & loaded into ${container.containerNumber}`,
+                  "success"
+                );
+
+                // Refresh displays
+                populateShipments();
+                populateDashboard();
+                populateContainers();
+              } else {
+                // Create shipment without container (receiving/sending)
+                const newShipment = await shipmentsAPI.create(shipmentData);
+
+                // Add to local data
+                appData.shipments.push(newShipment);
+
+                if (statusSpan) {
+                  statusSpan.className = `status status-${newStatus.replace(
+                    /_/g,
+                    "-"
+                  )}`;
+                  const statusLabel =
+                    newStatus === "received" ? "Received" : "In Transit";
+                  statusSpan.textContent = `${statusLabel} (New)`;
+                }
+
+                if (customerNameSpan) {
+                  customerNameSpan.textContent = "Not Assigned";
+                }
+
+                showNotification(
+                  `✅ ${decodedText} - ${actionText} - Created successfully`,
+                  "success"
+                );
+
+                // Refresh displays
+                populateShipments();
+                populateDashboard();
+              }
+            } catch (error) {
+              console.error("Error creating shipment:", error);
+              showNotification(
+                `❌ Failed to create shipment ${decodedText}`,
+                "error"
+              );
+
+              if (statusSpan) {
+                statusSpan.className = "status status-pending";
+                statusSpan.textContent = "Error";
+              }
             }
           }
         } catch (error) {
@@ -2832,6 +3267,244 @@
         AuthGuard.requireAuth();
       }
 
+      // Global error handler for authentication failures
+      window.addEventListener("unhandledrejection", (event) => {
+        const error = event.reason;
+        if (error && typeof error.message === "string") {
+          // Check for auth-related errors
+          if (
+            error.message.includes("401") ||
+            error.message.includes("Unauthorized") ||
+            error.message.includes("Token") ||
+            error.message.includes("Authentication")
+          ) {
+            console.error("🚨 Global auth error caught:", error.message);
+            event.preventDefault(); // Prevent default error handling
+
+            if (
+              window.authService &&
+              !window.location.pathname.includes("signin.html")
+            ) {
+              authService.handleAuthFailure();
+            }
+          }
+        }
+      });
+
+      // Notification Manager
+      const NotificationManager = {
+        notifications: [],
+        maxNotifications: 50,
+
+        init() {
+          // Load from localStorage
+          const stored = localStorage.getItem("appNotifications");
+          if (stored) {
+            try {
+              this.notifications = JSON.parse(stored);
+              this.render();
+              this.updateBadge();
+            } catch (e) {
+              console.error("Error loading notifications:", e);
+              this.notifications = [];
+            }
+          }
+
+          // Setup event listeners
+          document
+            .getElementById("notificationBell")
+            .addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.togglePanel();
+            });
+
+          document
+            .getElementById("clearNotifications")
+            .addEventListener("click", (e) => {
+              e.preventDefault();
+              this.clearAll();
+            });
+
+          // Close panel when clicking outside
+          document.addEventListener("click", (e) => {
+            const panel = document.getElementById("notificationPanel");
+            const bell = document.getElementById("notificationBell");
+            if (!panel.contains(e.target) && !bell.contains(e.target)) {
+              panel.classList.remove("show");
+            }
+          });
+        },
+
+        add(title, message, type = "info") {
+          const notification = {
+            id: Date.now() + Math.random(),
+            title,
+            message,
+            type, // success, info, warning, error
+            timestamp: new Date().toISOString(),
+            read: false,
+          };
+
+          this.notifications.unshift(notification);
+
+          // Limit notifications
+          if (this.notifications.length > this.maxNotifications) {
+            this.notifications = this.notifications.slice(
+              0,
+              this.maxNotifications
+            );
+          }
+
+          this.save();
+          this.render();
+          this.updateBadge();
+
+          return notification;
+        },
+
+        markAsRead(id) {
+          const notification = this.notifications.find((n) => n.id === id);
+          if (notification) {
+            notification.read = true;
+            this.save();
+            this.updateBadge();
+          }
+        },
+
+        markAllAsRead() {
+          this.notifications.forEach((n) => (n.read = true));
+          this.save();
+          this.updateBadge();
+          this.render();
+        },
+
+        clearAll() {
+          if (confirm("Clear all notifications?")) {
+            this.notifications = [];
+            this.save();
+            this.render();
+            this.updateBadge();
+          }
+        },
+
+        getUnreadCount() {
+          return this.notifications.filter((n) => !n.read).length;
+        },
+
+        updateBadge() {
+          const badge = document.getElementById("notificationBadge");
+          const count = this.getUnreadCount();
+
+          if (count > 0) {
+            badge.textContent = count > 99 ? "99+" : count;
+            badge.style.display = "flex";
+          } else {
+            badge.style.display = "none";
+          }
+        },
+
+        togglePanel() {
+          const panel = document.getElementById("notificationPanel");
+          panel.classList.toggle("show");
+
+          if (panel.classList.contains("show")) {
+            // Mark all as read when opening
+            setTimeout(() => this.markAllAsRead(), 1000);
+          }
+        },
+
+        getTimeAgo(timestamp) {
+          const now = new Date();
+          const then = new Date(timestamp);
+          const seconds = Math.floor((now - then) / 1000);
+
+          if (seconds < 60) return "Just now";
+          if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+          if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+          if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+          return then.toLocaleDateString();
+        },
+
+        getIcon(type) {
+          const icons = {
+            success: "fa-check-circle",
+            info: "fa-info-circle",
+            warning: "fa-exclamation-triangle",
+            error: "fa-times-circle",
+          };
+          return icons[type] || icons.info;
+        },
+
+        render() {
+          const list = document.getElementById("notificationList");
+
+          if (this.notifications.length === 0) {
+            list.innerHTML = `
+              <div class="notification-empty">
+                <i class="fas fa-bell-slash"></i>
+                <p>No notifications yet</p>
+              </div>
+            `;
+            return;
+          }
+
+          list.innerHTML = this.notifications
+            .map(
+              (n) => `
+            <div class="notification-item ${
+              n.read ? "" : "unread"
+            }" onclick="NotificationManager.markAsRead(${n.id})">
+              <div class="notification-icon ${n.type}">
+                <i class="fas ${this.getIcon(n.type)}"></i>
+              </div>
+              <div class="notification-content">
+                <div class="notification-title">${n.title}</div>
+                <div class="notification-message">${n.message}</div>
+                <div class="notification-time">${this.getTimeAgo(
+                  n.timestamp
+                )}</div>
+              </div>
+            </div>
+          `
+            )
+            .join("");
+        },
+
+        save() {
+          try {
+            localStorage.setItem(
+              "appNotifications",
+              JSON.stringify(this.notifications)
+            );
+          } catch (e) {
+            console.error("Error saving notifications:", e);
+          }
+        },
+      };
+
+      // Enhanced showNotification function to also add to notification panel
+      const originalShowNotification =
+        window.showNotification || showNotification;
+      window.showNotification = function (message, type = "info") {
+        // Show toast
+        if (originalShowNotification) {
+          originalShowNotification(message, type);
+        }
+
+        // Add to notification panel
+        const titles = {
+          success: "Success",
+          info: "Information",
+          warning: "Warning",
+          error: "Error",
+        };
+
+        NotificationManager.add(titles[type] || "Notification", message, type);
+      };
+
+      // Initialize notifications
+      NotificationManager.init();
+
       // Initialize app with backend data
       window.addEventListener("apisLoaded", async () => {
         // Initialize user info
@@ -2857,6 +3530,23 @@
         try {
           await loadAllData();
           console.log("✅ App initialized with backend data");
+
+          // Send welcome notification
+          const user = authService?.getCurrentUser();
+          if (user) {
+            const hour = new Date().getHours();
+            const greeting =
+              hour < 12
+                ? "Good morning"
+                : hour < 18
+                ? "Good afternoon"
+                : "Good evening";
+            NotificationManager.add(
+              `${greeting}, ${user.name || "User"}! 👋`,
+              `Welcome back to SkylineInventory. You have ${appData.shipments.length} shipments to manage.`,
+              "info"
+            );
+          }
         } catch (error) {
           console.error("❌ Error initializing app:", error.message);
           console.log("⚠️ No data loaded - showing empty state");
@@ -4795,6 +5485,30 @@
           debugAdminAccess();
         }
       }, 500);
+
+      // Test function to trigger auth failure redirect
+      window.testAuthFailure = function () {
+        console.log("🧪 Testing auth failure redirect...");
+        if (window.authService) {
+          authService.handleAuthFailure();
+        } else {
+          console.error("authService not available");
+        }
+      };
+
+      // Log auth status on load (after services are loaded)
+      setTimeout(() => {
+        if (window.authService) {
+          console.log("🔐 Auth Status:", {
+            isAuthenticated: authService.isAuthenticated(),
+            hasAccessToken: !!authService.getAccessToken(),
+            hasRefreshToken: !!authService.getRefreshToken(),
+            user: authService.getCurrentUser()?.name,
+          });
+        } else {
+          console.warn("⚠️ authService not loaded yet");
+        }
+      }, 1000);
 
       // Cleanup scanner on page unload
       window.addEventListener("beforeunload", async function () {

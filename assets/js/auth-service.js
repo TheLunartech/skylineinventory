@@ -1,7 +1,12 @@
 /**
  * Authentication Service
  * Handles all authentication-related API calls and token management
+ * @version 1.0.1
  */
+
+console.log(
+  "🔐 AuthService v1.0.1 loaded - with auto-redirect on auth failure"
+);
 
 class AuthService {
   constructor() {
@@ -88,18 +93,39 @@ class AuthService {
 
       if (!response.ok) {
         // Handle 401 - try to refresh token
-        if (response.status === 401 && this.getRefreshToken()) {
-          const refreshed = await this.refreshToken();
-          if (refreshed) {
-            // Retry original request with new token
-            config.headers.Authorization = `Bearer ${this.getAccessToken()}`;
-            const retryResponse = await fetch(url, config);
-            const retryData = await retryResponse.json();
+        if (response.status === 401) {
+          console.warn("🔐 Authentication failed (401) at:", url);
 
-            if (!retryResponse.ok) {
-              throw new Error(retryData.message || "Request failed");
+          if (this.getRefreshToken()) {
+            console.log("🔄 Attempting token refresh...");
+            const refreshed = await this.refreshToken();
+
+            if (refreshed) {
+              // Retry original request with new token
+              console.log("✅ Token refreshed, retrying request...");
+              config.headers.Authorization = `Bearer ${this.getAccessToken()}`;
+              const retryResponse = await fetch(url, config);
+              const retryData = await retryResponse.json();
+
+              if (!retryResponse.ok) {
+                console.error(
+                  "❌ Retry failed after token refresh, redirecting..."
+                );
+                this.handleAuthFailure();
+                return; // Don't throw, just return after redirect
+              }
+              return retryData;
+            } else {
+              // Refresh failed - redirect
+              console.error("❌ Token refresh failed, redirecting...");
+              this.handleAuthFailure();
+              return; // Don't throw, just return after redirect
             }
-            return retryData;
+          } else {
+            // No refresh token - redirect immediately
+            console.error("❌ No refresh token available, redirecting...");
+            this.handleAuthFailure();
+            return; // Don't throw, just return after redirect
           }
         }
 
@@ -166,7 +192,8 @@ class AuthService {
 
       if (!response.ok) {
         // Refresh failed, clear auth data and redirect to login
-        this.logout();
+        console.error("❌ Token refresh failed");
+        this.handleAuthFailure();
         throw new Error(data.message || "Token refresh failed");
       }
 
@@ -176,15 +203,40 @@ class AuthService {
       return data;
     } catch (error) {
       console.error("Token Refresh Error:", error);
-      this.logout();
+      this.handleAuthFailure();
       return null;
     }
+  }
+
+  /**
+   * Handle authentication failure
+   */
+  handleAuthFailure() {
+    console.warn("🚪 handleAuthFailure() called - Redirecting to login...");
+
+    // Prevent multiple redirects
+    if (window._isRedirecting) {
+      console.log("⏸️ Already redirecting, skipping...");
+      return;
+    }
+    window._isRedirecting = true;
+
+    this.clearAuthData();
+
+    // Store redirect reason
+    sessionStorage.setItem("authFailureReason", "session_expired");
+
+    console.log("🔄 Redirect scheduled to signin.html");
+
+    // Immediate redirect without delay
+    window.location.href = "signin.html";
   }
 
   /**
    * Logout user
    */
   logout() {
+    console.log("👋 User logging out...");
     this.clearAuthData();
     window.location.href = "signin.html";
   }

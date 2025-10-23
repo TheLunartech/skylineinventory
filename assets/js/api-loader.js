@@ -7,6 +7,9 @@
  */
 
 (function () {
+  // Version for cache busting - increment when files change
+  const version = "1.0.1";
+
   const apiScripts = [
     // Core authentication and config (if not already loaded)
     "./assets/js/config.js",
@@ -46,7 +49,16 @@
       }
 
       const script = document.createElement("script");
-      script.src = src;
+      // Add cache busting for core auth files
+      if (
+        src.includes("auth-service") ||
+        src.includes("auth-guard") ||
+        src.includes("config.js")
+      ) {
+        script.src = `${src}?v=${version}`;
+      } else {
+        script.src = src;
+      }
       script.onload = resolve;
       script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
       document.head.appendChild(script);

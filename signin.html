@@ -225,6 +225,57 @@
           }
         });
 
+      // Check for auth failure redirect
+      window.addEventListener("load", function () {
+        const authFailureReason = sessionStorage.getItem("authFailureReason");
+        if (authFailureReason === "session_expired") {
+          sessionStorage.removeItem("authFailureReason");
+
+          // Show session expired message
+          const messageDiv = document.createElement("div");
+          messageDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 400px;
+            font-family: system-ui, sans-serif;
+            animation: slideIn 0.3s ease-out;
+          `;
+          messageDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="uil uil-exclamation-triangle" style="font-size: 24px;"></i>
+              <div>
+                <strong style="display: block; margin-bottom: 4px;">Session Expired</strong>
+                <span style="font-size: 14px;">Your session has expired. Please login again.</span>
+              </div>
+            </div>
+          `;
+
+          // Add animation style
+          const style = document.createElement("style");
+          style.textContent = `
+            @keyframes slideIn {
+              from { transform: translateX(400px); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `;
+          document.head.appendChild(style);
+          document.body.appendChild(messageDiv);
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            messageDiv.style.animation = "slideIn 0.3s ease-out reverse";
+            setTimeout(() => messageDiv.remove(), 300);
+          }, 5000);
+        }
+      });
+
       // Toggle password visibility
       document
         .querySelector(".toggle-password-type")
