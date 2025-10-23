@@ -4,8 +4,8 @@
  */
 const API_CONFIG = {
   // Backend API base URL - update this based on your environment
-  // BASE_URL: "https://skyline-backend-bqzy.onrender.com/api",
-  BASE_URL: "http://localhost:3000/api",
+  BASE_URL: "https://skyline-backend-bqzy.onrender.com/api",
+//  BASE_URL: "http://localhost:3000/api",
   // API endpoints
   ENDPOINTS: {
     // Auth endpoints
